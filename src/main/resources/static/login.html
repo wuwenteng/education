@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <!-- <meta http-equiv="Content-Type" content="application/json"> -->
+    <title>登录</title>
+    <!-- bootstrap & fontawesome -->
+		<link rel="stylesheet" href="assets/css/bootstrap.min.css" />
+		<link rel="stylesheet" href="assets/font-awesome/4.5.0/css/font-awesome.min.css" />
+
+		<!-- text fonts -->
+		<link rel="stylesheet" href="assets/css/fonts.googleapis.com.css" />
+
+		<!-- ace styles -->
+		<link rel="stylesheet" href="assets/css/ace.min.css" />
+
+		<!--[if lte IE 9]>
+			<link rel="stylesheet" href="assets/css/ace-part2.min.css" />
+		<![endif]-->
+		<link rel="stylesheet" href="assets/css/ace-rtl.min.css" />
+    <script src="js/jquery-3.3.1.min.js"></script>
+    <!-- <script src="jquery.form.js"></script> -->
+    <script>
+        var random = '';
+        function updateCaptcha() {
+            random = new Date().getTime()+''+Math.floor(Math.random() * Math.pow(10, 8));
+            $('#validationCode_img').attr('src', 'http://localhost:8080/getCode?rad='+random);
+        }
+
+        $(function() {
+            updateCaptcha();
+
+            function login(username,password,role,url) {
+                alert(role);
+                $.ajax({
+                    // xhrFields: {
+                    //     withCredentials: true
+                    // },
+                    type : "POST",
+                    contentType: 'application/json',
+                    url : url,
+                    data :  JSON.stringify({"username":username, "password":password, "role":role}),
+                    dataType : 'json',
+                    success: function(data) {
+                        if(data.code == 200) {
+                            alert("成功");
+                            if(data.data[0].role == "teacher") {
+                                window.location = "teacher.html";
+                            } else if (data.data[0].role == "student"){
+                                window.location = "studentMessage.html";
+                            } else if(data.data[0].role == 'manager') {
+                                window.location = "manager.html";
+                            }else {
+                                alert("请重新输入");
+                            }
+                        } else if(data.code == 201) {
+                            alert("密码重置成功，请返回登陆界面登录");
+                        } else if(data.data == 202) {
+                            alert("注册成功，返回登陆页面登录");
+                        }
+                        else {
+                            alert(data.message);
+                        }
+                        
+                    },
+                    error:function(XMLHttpRequest, textStatus, errorThrown) {
+                        alert(XMLHttpRequest.status);
+                        alert(XMLHttpRequest.readyState);
+                        alert(textStatus);
+                    }
+                });
+            }
+
+            $("#submitLog").click(function() {
+                var username = $("#username").val();
+                var password = $("#password").val();
+                var role = $("#selectRole option:selected").val();
+                var validationCode = $('#validation').val();
+                var url = "http://localhost:8080/login";
+                $.ajax({
+                    type:'GET',
+                    data:{"validation":validationCode},
+                    dataType:'json',
+                    url:"http://localhost:8080/getValidationCode",
+                    success: function(data) {
+                        if(data.code == 200){
+                            login(username,password,role,url);
+                        } else {
+                            alert(data.message);
+                        }
+                    }
+                });
+                
+            });
+        
+            $("#registered").click(function() {
+                //window.location = "register.html";
+                var username = $("#newUsername").val();
+                var password = $("#newPassword").val();
+                var repeatPassword = $("#repeatPassword").val();
+                var role = $("#selectRoleNew option:selected").val();
+                var url = "http://localhost:8080/registered";
+                if(password == repeatPassword) {
+                    login(username,password,role,url);
+                } else {
+                    alert("密码不一致，请重新输入");
+                }
+                
+            });
+
+            $('#submitBtn').click(function() {
+                var username = $("#reusername").val();
+                var password = $('#repassword').val();
+                var role = $('#reselectRole option:selected').val();
+                alert("username:"+username+", password:"+password +", role:"+role);
+                var url = "http://localhost:8080/forgetPassword";
+
+                if(username != null && password !=null && role != null) {
+                    login(username,password,role,url);
+                } else {
+                    alert("有内容为空！");
+                }
+            });
+
+            $("#validationCode_img").click(function(){
+     
+                updateCaptcha();
+            });
+        });
+    </script>
+</head>
+<body class="login-layout light-login">
+<!-- <form style="text-align:center;" id="submitForm">
+    用户名：<label><input type="text" name="username" id="username"/></label><br />
+    密 码：<label><input type="password" name="password" id="password"/></label><br />
+    <label>
+        <div>身份类别：
+            <select name="role" id="selectRole">
+                <option value="student">学生</option> 
+                <option value="teacher">老师</option>
+                <option value="manager">工作人员</option>
+            </select>
+        </div>
+    </label>
+    
+    <input type="button" value="登录" id="submitLog"/>
+    <input type="button" value="注册" id="registered"/>
+</form> -->
+<div class="main-container">
+    <div class="main-content">
+        <div class="row">
+            <div class="col-sm-10 col-sm-offset-1">
+                <div class="login-container">
+                    <div class="center">
+                        <h1>
+                            <i class="ace-icon fa fa-leaf green"></i>
+                            <span class="red">NPU</span>
+                            <span class="blue" id="id-text2">登录</span>
+                        </h1>
+                        <h4 class="blue" id="id-company-text">&copy; 教务系统</h4>
+                    </div>
+                    
+                    <div class="space-6"></div>
+                    
+                    <div class="position-relative">
+                        <div id="login-box" class="login-box visible widget-box no-border">
+                            <div class="widget-body">
+                                <div class="widget-main">
+                                <h4 class="header blue lighter bigger">
+                                        <i class="ace-icon fa fa-coffee green"></i>
+                                        请输入你的信息
+                                </h4>
+                
+                                <div class="space-6"></div>
+                    
+                                    <form>
+                                        <fieldset>
+                                            <label class="block clearfix">
+                                                <span class="block input-icon input-icon-right">
+                                                    <input type="text" class="form-control" placeholder="用户名" id="username" />
+                                                    <i class="ace-icon fa fa-user"></i>
+                                                </span>
+                                            </label>
+                    
+                                            <label class="block clearfix">
+                                                <span class="block input-icon input-icon-right">
+                                                    <input type="password" class="form-control" placeholder="密码" id="password" />
+                                                    <i class="ace-icon fa fa-lock"></i>
+                                                </span>
+                                            </label>
+
+                                            <label>
+                                                <div>身份类别：
+                                                    <select name="role" id="selectRole">
+                                                        <option value="student">学生</option> 
+                                                        <option value="teacher">老师</option>
+                                                        <option value="manager">工作人员</option>
+                                                    </select>
+                                                </div>
+                                            </label>
+                    
+                                            <div class="space"></div>
+                                            
+                                            <div>
+                                                <label>验证码:</label>
+                                                <input type="text" name="validationCode" style="width: 200px;" id="validation"/>
+                                                <img id="validationCode_img"  src="">
+                                                <a href="#" onclick="updateCaptcha()">换一张</a>
+                                            </div>
+                
+                                            <div class="clearfix">
+                                                <label class="inline">
+                                                    <input type="checkbox" class="ace" />
+                                                    <span class="lbl">记住密码</span>
+                                                </label>
+                    
+                                                <button type="button" class="width-35 pull-right btn btn-sm btn-primary" id="submitLog">
+                                                    <i class="ace-icon fa fa-key"></i>
+                                                    <span class="bigger-110">登录</span>
+                                                </button>
+                                            </div>
+                
+                                            <div class="space-4"></div>
+                                        </fieldset>
+                                    </form>
+                                </div><!-- /.widget-main -->
+                    
+                                <div class="toolbar clearfix">
+                                    <div>
+                                        <a href="#" data-target="#forgot-box" class="forgot-password-link">
+                                            <i class="ace-icon fa fa-arrow-left"></i>
+                                            忘记密码
+                                        </a>
+                                    </div>
+                    
+                                    <div>
+                                        <a href="#" data-target="#signup-box" class="user-signup-link">
+                                            注册
+                                            <i class="ace-icon fa fa-arrow-right"></i>
+                                        </a>
+                                    </div>
+                                </div>
+                            </div><!-- /.widget-body -->
+                        </div><!-- /.login-box -->
+                    
+                        <div id="forgot-box" class="forgot-box widget-box no-border">
+                            <div class="widget-body">
+                                <div class="widget-main">
+                                    <h4 class="header red lighter bigger">
+                                        <i class="ace-icon fa fa-key"></i>
+                                        重置密码
+                                    </h4>
+                    
+                                    <div class="space-6"></div>
+                                    <p>
+                                        请输入你的账号和新密码
+                                    </p>
+                
+                                    <form>
+                                        <fieldset>
+                                            <label class="block clearfix">
+                                                <span class="block input-icon input-icon-right">
+                                                    <input type="text" class="form-control" id="reusername" placeholder="username" />
+                                                    <i class="ace-icon fa fa-user"></i>
+                                                </span>
+                                            </label>
+                                            <label class="block clearfix">
+                                                <span class="block input-icon input-icon-right">
+                                                    <input type="text" class="form-control" id="repassword" placeholder="password" />
+                                                    <i class="ace-icon fa fa-lock"></i>
+                                                </span>
+                                            </label>
+
+                                            <label>
+                                                <div>身份类别：
+                                                    <select name="role" id="reselectRole">
+                                                        <option value="student">学生</option> 
+                                                        <option value="teacher">老师</option>
+                                                        <option value="manager">工作人员</option>
+                                                    </select>
+                                                </div>
+                                            </label>
+                    
+                                            <div class="clearfix">
+                                                <button type="button" class="width-35 pull-right btn btn-sm btn-danger" id="submitBtn">
+                                                    <i class="ace-icon fa fa-lightbulb-o"></i>
+                                                    <span class="bigger-110">提交</span>
+                                                </button>
+                                            </div>
+                                        </fieldset>
+                                    </form>
+                                </div><!-- /.widget-main -->
+                    
+                                <div class="toolbar center">
+                                    <a href="#" data-target="#login-box" class="back-to-login-link">
+                                        返回登录页面
+                                        <i class="ace-icon fa fa-arrow-right"></i>
+                                    </a>
+                                </div>
+                            </div><!-- /.widget-body -->
+                        </div><!-- /.forgot-box -->
+                    
+                        <div id="signup-box" class="signup-box widget-box no-border">
+                            <div class="widget-body">
+                                <div class="widget-main">
+                                    <h4 class="header green lighter bigger">
+                                        <i class="ace-icon fa fa-users blue"></i>
+                                        新用户注册
+                                    </h4>
+                    
+                                    <div class="space-6"></div>
+                                    <p> 在下面输入您的信息: </p>
+                    
+                                    <form>
+                                        <fieldset>
+                                            <label class="block clearfix">
+                                                <span class="block input-icon input-icon-right">
+                                                    <input type="text" class="form-control" placeholder="用户名" id="newUsername" />
+                                                    <i class="ace-icon fa fa-user"></i>
+                                                </span>
+                                            </label>
+                    
+                                            <label class="block clearfix">
+                                                <span class="block input-icon input-icon-right">
+                                                    <input type="password" class="form-control" placeholder="密码" id="newPassword" />
+                                                    <i class="ace-icon fa fa-lock"></i>
+                                                </span>
+                                            </label>
+                    
+                                            <label class="block clearfix">
+                                                <span class="block input-icon input-icon-right">
+                                                    <input type="password" class="form-control" placeholder="重新输入密码" id="repeatPassword" />
+                                                    <i class="ace-icon fa fa-retweet"></i>
+                                                </span>
+                                            </label>
+
+                                            <label>
+                                                <div>身份类别：
+                                                    <select name="role" id="selectRoleNew">
+                                                        <option value="student">学生</option> 
+                                                        <option value="teacher">老师</option>
+                                                        <option value="manager">工作人员</option>
+                                                    </select>
+                                                </div>
+                                            </label>
+
+                                            <div class="space-24"></div>
+                    
+                                            <div class="clearfix">
+                                                <button type="reset" class="width-30 pull-left btn btn-sm">
+                                                    <i class="ace-icon fa fa-refresh"></i>
+                                                    <span class="bigger-110">重置</span>
+                                                </button>
+                
+                                                <button type="button" class="width-65 pull-right btn btn-sm btn-success" id="registered">
+                                                    <span class="bigger-110">注册</span>
+                
+                                                    <i class="ace-icon fa fa-arrow-right icon-on-right"></i>
+                                                </button>
+                                            </div>
+                                        </fieldset>
+                                    </form>
+                                </div>
+                    
+                                <div class="toolbar center">
+                                    <a href="#" data-target="#login-box" class="back-to-login-link">
+                                        <i class="ace-icon fa fa-arrow-left"></i>
+                                        返回登录页
+                                    </a>
+                                </div>
+                            </div><!-- /.widget-body -->
+                        </div><!-- /.signup-box -->
+                    </div><!-- /.position-relative -->
+                </div>
+            </div><!-- /.col -->
+        </div>
+    </div>
+</div>
+
+<script type="text/javascript">
+    jQuery(function($) {
+     $(document).on('click', '.toolbar a[data-target]', function(e) {
+        e.preventDefault();
+        var target = $(this).data('target');
+        $('.widget-box.visible').removeClass('visible');//hide others
+        $(target).addClass('visible');//show target
+     });
+    });
+</script>
+</body>
+</html>

@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>首页</title>
+    <script src="js/jquery-3.3.1.min.js"></script>
+    <script>
+        $(function(){
+            $("#loginBtn").click(function() {
+                window.location = "login.html";
+            });
+
+            $("#userBtn").click(function() {
+                $.ajax({
+                    type:"GET",
+                    url:"http://localhost:8080/userPage",
+                    dataType:"text",
+                    success: function(data){
+                        if(data == "skip") {
+                            window.location = "userMgt.html";
+                        } else {
+                            window.location = "login.html";
+                        }
+                    },
+                    error: function(XMLHttpRequest, textStatus, errorThrown) {
+                        alert(XMLHttpRequest.status);
+                        alert(XMLHttpRequest.readyState);
+                        alert(textStatus);
+                    }
+                });
+            });
+
+            $("#managerBtn").click(function(){
+                $.ajax({
+                    type:"GET",
+                    url:"http://localhost:8080/managerPage",
+                    dataType:"text",
+                    success: function(data){
+                        if(data == "skip") {
+                            window.location = "manager.html";
+                        } else {
+                            window.location = "login.html";
+                        }
+                    },
+                    error: function(XMLHttpRequest, textStatus, errorThrown) {
+                        alert(XMLHttpRequest.status);
+                        alert(XMLHttpRequest.readyState);
+                        alert(textStatus);
+                    }
+                });
+            });
+        });
+    </script>
+</head>
+<body>
+<form>
+    <input type="button" value="登录" id="loginBtn">
+</form>
+</body>
+</html>

@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>注册</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <script src="js/jquery-3.3.1.min.js"></script>
+    <script src="js/jquery.form.js"></script>
+    <script>
+        $(function() {
+            
+            $("#registeredForm").ajaxForm(function(data) {
+                //alert(data.message);
+                if(data.code == "0") {
+                    alert("注册成功");
+                    var role = data.data[0].role;
+                    if(role == "teacher") {
+                        window.location = "teacher.html";
+                    } else if(role == "student") {
+                        window.location = "student.html";
+                    } else {
+                        window.location = "manager.html";
+                    }  
+                } else {
+                    alert("请重新输入密码或姓名");
+                }
+            })
+        });
+    </script>
+</head>
+<body>
+    <form action="http://localhost:8080/registered" method="POST" style="text-align:center;" id="registeredForm">
+        用户名：<label><input type="text" name="username" id="userText"/></label><br/>
+        密 码：<label><input type="password" name="password" id="passwordText"/></label><br />
+        确认密码：<label><input type="password" name="passwordAgain" id="passwordAgain"/></label><br />
+        <label>
+            <div>身份类别：
+                <select name="role" id="selectRole">
+                    <option value="student">学生</option>
+                    <option value="teacher">老师</option>
+                    <option value="manager">教务人员</option>
+                </select>
+            </div>
+        </label>
+        <input type="submit" name="registered" value="注册" />
+    </form>
+</body>
+</html>

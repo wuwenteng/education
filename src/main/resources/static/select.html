@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>学生选课页面</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" type="text/css" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.10.19/css/dataTables.bootstrap.min.css">
+    <link rel="stylesheet" type="text/css" href="https://cdn.bootcss.com/bootstrap/3.3.7/css/bootstrap.min.css">
+    <link rel="stylesheet" type="text/css" href="css/doublebox-bootstrap.css" />
+    <script src="js/jquery-3.3.1.min.js"></script>
+    <script src="https://cdn.datatables.net/1.10.19/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.bootcss.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+    <script src="https://cdn.datatables.net/1.10.19/js/dataTables.bootstrap.min.js"></script>
+    <script type="text/javascript" src="js/doublebox-bootstrap.js"></script>
+    
+    <script>
+        $(function() {
+            $.ajax({
+                type:"GET",
+                url : "http://localhost:8080/getUsername",
+                data : {},
+                dataType : 'json',
+
+                success : function(data){
+                    if (data.code==00) {
+                        $("#username").html(data.user.username + ",欢迎你! <button id='login'>登录</button><button id='logout'>退出</button>");
+                    } else {
+                        alert(data.message);
+                    }
+                }
+            });
+            
+            var table = $("#table").DataTable({
+                "columns" : [
+                    {"data":"id"},
+                    {"data":"number"},
+                    {"data":"name"},
+                    {"data":"time"},
+                    {"data":"place"},
+                    // {"data":"grade"},
+                    // {"data":"","bSortable":false,
+                    //     "mRender": function(data,type,full){
+                    //         return '<button class="btn btn-primary" id="changedBtn">修改</button>' +
+                    //             '<button class="btn btn-warning" id="deleteBtn">删除</button>';   
+                    //     }
+                    // }
+                ],
+                "oLanguage":{
+                    "sLengthMenu":"每页显示_MENU_条记录",
+                    "sZeroRecords":"抱歉，没有找到",
+                    "sInfo":"从_START_到_END_/共_TOTAL_条数据",
+                    "sInfoEmpty":"没有数据",
+                    "sInfoFiltered":"(从_MAX_条数据中检索)",
+                    "oPaginate":{
+                        "sFirst":"首页",
+                        "sPrevious":"前一页",
+                        "sNext":"后一页",
+                        "sLast":"尾页"
+                    }
+                },
+                "ajax": {
+                    "url" : "http://localhost:8080/selectCourse/", //不同操作不同url
+                    "type" : "GET"
+                    
+                }
+            });
+
+            $.ajax({
+                type:"GET",
+                url:"http://localhost:8080/selectCourse",
+                data:{},
+                dataType:"json",
+                success:function(data) {
+                    if(data.code == 200) {
+                        var list = data.data;
+                        var array = "[";
+                        for(var i in list){
+                            var courseId = list[i].id;
+                            var courseName = list[i].name;
+                            var num = i;
+                            num = parseInt(num);
+                            if(i == list.length-1) {
+                                array += "{\"id\":\"" + (num+1) +"\",\"courseName\":\"" + courseName + "\"}";
+                            } else {
+                                array += "{\"id\":\"" + (num+1) +"\",\"courseName\":\"" + courseName + "\"},";
+                            }
+                        }
+                        array += "]";
+                        var jsonArr = JSON.parse(array);
+                        //alert(jsonArr);
+                        demo2 = $('.demo').doublebox({
+                            nonSelectedListLabel: '全部课程',
+                            selectedListLabel: '已选课程',
+                            preserveSelectionOnMove: 'moved',
+                            moveOnSelect: false,
+                            nonSelectedList:jsonArr,
+                            selectedList:[],
+                            optionValue:"id",
+                            optionText:"courseName",
+                            doubleMove:true,
+                        });
+                        
+                    }
+                },
+                error: function(XMLHttpRequest,textStatus,errorThrown) {
+                    alert(XMLHttpRequest.status);
+                    alert(XMLHttpRequest.readyState);
+                    alert(textStatus);
+                }
+            });
+
+            $("#submitBtn").click(function() {
+                var nameArr = new Array();
+                $("#bootstrap-duallistbox-selected-list_doublebox option").each(function(){
+                    //alert($(this).val());   //获取option值   
+                    //alert($(this).text());
+                    var message = $(this).text();
+                    nameArr.push(message);
+                    // 得到的内容正确
+                });
+                //alert(nameArr);
+                $.ajax({
+                    type:"GET",
+                    url:"http://localhost:8080/addStudentCourse",
+                    dataType:"json",
+                    data:{"message":nameArr},
+                    traditional: true,//这里设置为true, 不允许在数组名称后自动加[]
+                    success: function(data) {
+                        alert(data.message);
+                    },
+                    error:function(XMLHttpRequest,textStatus,error){
+                        alert(XMLHttpRequest.status);
+                        alert(XMLHttpRequest.readyState);
+                        alert(textStatus);
+                    }
+                });
+            });
+
+            $("#username").on('click','#logout',function(event) {
+                $.ajax({
+                    type:"GET",
+                    url:"http://localhost:8080/logout",
+                    dataType:'json',
+                    success: function(data) {
+                        alert(data.message);
+                        window.location = "login.html";
+                    },
+                    error: function(XMLHttpRequest,textStatus,error) {
+                        alert(XMLHttpRequest.status);
+                        alert(XMLHttpRequest.readyState);
+                        alert(error);
+                    }
+                });
+            });
+
+            $("#username").on('click','#login',function(event) {
+                window.location = "login.html";
+            });
+        })
+    </script>
+</head>
+<body>
+    <h2 style="padding-left:50px">学生选课页面</h2>
+    <p id="username" style="float:right;padding-right:100px">...,欢迎你! <button id='login'>登录</button><button id='logout'>退出</button></p>
+    <br />
+    <div style="padding-left:50px">
+        <p><b>所有课程</b></p>
+    </div>
+   
+    <div style="padding-left:50px;width:950px">
+        <table id="table" class="display table table-striped table-bordered table-hover" style="width:100%">
+            <colgroup>
+                <!-- 设置每列得占比 -->
+                <col width="15%"/>
+                <col width="15%"/>
+                <col width="20%"/>
+                <col width="30%"/>
+                <col width="20%"/>
+            </colgroup>
+            <thead>
+                <tr>
+                    <td>序 号</td>
+                    <td>课程代码</td>
+                    <td>课程名称</td>
+                    <td>开课时间</td>
+                    <td>上课地点</td>
+                </tr>
+            </thead>
+        </table>
+    </div>
+    <br />
+    <div style="padding-left:50px">
+        <input type="button" id="submitBtn" value="提交选课" class="btn bg-info"/>
+    </div>
+    
+    <br />
+    <div class="ue-container" style="padding-left:50px;width:950px">
+        <select multiple="multiple" size="10" name="doublebox" class="demo" id="test">
+        </select>
+    </div>
+</body>
+</html>

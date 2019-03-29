@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>教师主页</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <!-- bootstrap & fontawesome -->
+	<link rel="stylesheet" href="assets/css/bootstrap.min.css" />
+	<link rel="stylesheet" href="assets/font-awesome/4.5.0/css/font-awesome.min.css" />
+
+	<!-- page specific plugin styles -->
+
+	<!-- text fonts -->
+	<link rel="stylesheet" href="assets/css/fonts.googleapis.com.css" />
+
+	<!-- ace styles -->
+	<link rel="stylesheet" href="assets/css/ace.min.css" class="ace-main-stylesheet" id="main-ace-style" />
+
+	<!--[if lte IE 9]>
+    <link rel="stylesheet" href="assets/css/ace-part2.min.css" class="ace-main-stylesheet"/>
+    <![endif]-->
+	<link rel="stylesheet" href="assets/css/ace-skins.min.css" />
+    <link rel="stylesheet" href="assets/css/ace-rtl.min.css" />
+    <link rel="stylesheet" href="css/jquery.Jcrop.css">
+    <style type="text/css">
+
+        /* Apply these styles only when #preview-pane has
+           been placed within the Jcrop widget */
+        .jcrop-holder #preview-pane {
+          display: block;
+          position: absolute;
+          z-index: 2000;
+          top: 10px;
+          right: -280px;
+          padding: 6px;
+          border: 1px rgba(0,0,0,0.4) solid;
+          background-color: white;
+        
+          -webkit-border-radius: 6px;
+          -moz-border-radius: 6px;
+          border-radius: 6px;
+        
+          -webkit-box-shadow: 1px 1px 5px 2px rgba(0, 0, 0, 0.2);
+          -moz-box-shadow: 1px 1px 5px 2px rgba(0, 0, 0, 0.2);
+          box-shadow: 1px 1px 5px 2px rgba(0, 0, 0, 0.2);
+        }
+        
+        /* The Javascript code will set the aspect ratio of the crop
+           area based on the size of the thumbnail preview,
+           specified here */
+        #preview-pane .preview-container {
+          width: 250px;
+          height: 170px;
+          overflow: hidden;
+        }   
+    </style>
+    <script src="assets/js/jquery-2.1.4.min.js"></script>
+    <!-- ace settings handler -->
+    <script src="assets/js/ace-extra.min.js"></script>
+    
+    
+    <script src="assets/js/bootstrap.min.js"></script>
+
+	<!-- page specific plugin scripts -->
+	<script src="assets/js/jquery.dataTables.min.js"></script>
+	<script src="assets/js/jquery.dataTables.bootstrap.min.js"></script>
+    <script src="assets/js/dataTables.select.min.js"></script>
+    <!-- ace scripts -->
+	<script src="assets/js/ace-elements.min.js"></script>
+    <script src="assets/js/ace.min.js"></script>
+    <script src="js/jquery.Jcrop.js"></script>
+    <script>
+        // 上传头像需要
+        var global_api =  " ";
+        var boundx =""; // 图片宽度
+        var boundy =""; //页面图片高度
+        var tag = false;
+        $(function() {
+
+            // 全局变量
+            var studentNumber;
+            var studentName;
+
+            $.ajax({
+                type:"GET",
+                url : "http://localhost:8080/haveLogin/getUsername",
+                data : {},
+                dataType : 'json',
+
+                success : function(data){
+                    if (data.code==200) {
+                        $("#username").html(data.user.username);
+                        //$("#number").html(data.user.password);
+                        studentNumber = data.user.password;
+                        studentName = data.user.username;
+                        $("#name").html(studentName);
+                        $("#number").html(studentNumber);
+                        $("#studentName").html(studentName);
+                        if(data.user.imagePath != null) {
+                            $('#avatar').attr("src", data.user.imagePath);
+                        }
+                    } else {
+                        alert(data.message);
+                    }
+                }
+
+            });
+
+            $("#logout").click(function() {
+                $.ajax({
+                    type:"GET",
+                    url:"http://localhost:8080/logout",
+                    dataType:'json',
+                    success: function(data) {
+                        if(data.code == 200) {
+                            alert("退出成功");
+                            window.location = "login.html";
+                        }else {
+                            aler(data.message);
+                        }
+                        
+                    },
+                    error: function(XMLHttpRequest,textStatus,error) {
+                        alert(XMLHttpRequest.status);
+                        alert(XMLHttpRequest.readyState);
+                        alert(error);
+                    }
+                });
+            });
+
+            $('#settingPic').click(function() {
+                $("#uploadPicture").attr("style","display:block");
+                $('#baseMessage').attr("style","display:none");
+            });
+
+            var jcrop_api, 
+                $preview = $('#preview-pane'), 
+                $pcnt = $('#preview-pane .preview-container'),
+                $pimg = $('#preview-pane .preview-container img'),
+
+                xsize = $pcnt.width(),
+                ysize = $pcnt.height();
+
+            $('#target').Jcrop({
+                onChange: updatePreview,
+                onSelect: updatePreview,
+                aspectRatio: xsize/ysize
+            },function() {
+                // 使用api获取真实的图像大小
+                var bounds = this.getBounds();
+                boundx = bounds[0];
+                boundy = bounds[1];
+                // jcrop_api中存放API
+                jcrop_api = this;
+                // 预览进入jcrop容器css定位
+                $preview.appendTo(jcrop_api.ui.holder);
+            });
+
+            function updatePreview(c) {
+                $('#x').val(c.x);
+                $('#y').val(c.y);
+                $('#w').val(c.w);
+                $('#h').val(c.h);
+
+                if(parseInt(c.w)>0) {
+                    global_api = c;
+
+                    var rx = xsize /c.w;
+                    var ry = ysize /c.h;
+
+                    $pimg.css({
+                        width:Math.round(rx * boundx) + 'px',
+                        height:Math.round(ry * boundy) + 'px',
+                        marginLeft: '-' + Math.round(rx * c.x) + 'px',
+                        marginTop: '-' + Math.round(ry * c.y) + 'px'
+                    })
+                }
+            };
+
+            // 预览
+            $('#upload_image').change(function(event) {
+                var formData = new FormData();
+                formData.append("picture",$('#upload_image')[0].files[0]);
+                $.ajax({
+                    type:"post",
+                    url:"http://localhost:8080/zipPicture",
+                    data:formData,
+                    cache: false,
+                    processData: false,
+                    contentType: false,
+                    dataType:'json',
+
+                    success: function(data) {
+                        if(data.code == 200) {
+                            $('.jcrop-holder img').attr("src",data.user.imagePath);
+                            $('.preview-container img').attr("src",data.user.imagePath);
+                            // $('#target').attr('src',data.user.imagePath);
+                        }
+                    },
+                    error: function(XMLHttpRequest,textStatus,error) {
+                        alert("上传失败");
+                        alert(XMLHttpRequest.status);
+                        alert(XMLHttpRequest.readyState);
+                        alert(error);
+                    }
+                });
+            });
+
+            $('#upload_image').change(function() {
+                tag = true;
+            });
+        })
+
+        function submit() {
+            if(tag && global_api != ""){
+                var formData = new FormData();
+                formData.append('picture',$('#upload_image')[0].files[0]);
+                formData.append('x',$("#x").val());
+                formData.append('y',$('#y').val());
+                formData.append('w',$('#w').val());
+                formData.append('h',$("#h").val());
+                uploadPic(formData);
+                $("#uploadPicture").attr("style","display:none");
+                $('#baseMessage').attr("style","display:block");
+                window.location.reload();
+            } else {
+                alert('没有选择新的图片');
+            }
+        }
+
+        function uploadPic(formData) { 
+            // 构建form中的文件
+            $.ajax({
+                type:"post",
+                url:"http://localhost:8080/uploadPic",
+                data:formData,
+                cache: false,
+                processData: false,
+                contentType: false,
+                dataType:'json',
+
+                success: function(data) {
+                    if(data.code == 200) {
+                        // $('#imge').attr("src",data.user.imagePath);
+                        $('#avatar').attr("src", data.user.imagePath);
+                    }
+                },
+                error: function(XMLHttpRequest,textStatus,error) {
+                    alert("上传失败");
+                    alert(XMLHttpRequest.status);
+                    alert(XMLHttpRequest.readyState);
+                    alert(error);
+                }
+            });
+        }
+    </script>
+</head>
+<body class="no-skin">
+    <div id="navbar" class="navbar navbar-default          ace-save-state">
+        <div class="navbar-container ace-save-state" id="navbar-container">
+            <button type="button" class="navbar-toggle menu-toggler pull-left" id="menu-toggler" data-target="#sidebar">
+                <span class="sr-only">Toggle sidebar</span>
+        
+                <span class="icon-bar"></span>
+        
+                <span class="icon-bar"></span>
+        
+                <span class="icon-bar"></span>
+            </button>
+            <div class="navbar-header pull-left">
+                <a href="studentMessage.html" class="navbar-brand">
+                    <small>
+                        <i class="fa fa-leaf"></i>
+                        教师页面
+                    </small>
+                </a>
+            </div>
+        
+            <div class="navbar-buttons navbar-header pull-right" role="navigation">
+                <ul class="nav ace-nav">
+                    <li class="light-blue dropdown-modal">
+                        <a data-toggle="dropdown" href="#" class="dropdown-toggle">
+                            <img class="nav-user-photo" src="assets/images/avatars/user.jpg" alt="Jason's Photo" />
+                            <span class="user-info">
+                                <small>Welcome,</small>
+                                <p id="username"></p>
+                            </span>
+                
+                            <i class="ace-icon fa fa-caret-down"></i>
+                        </a>
+                
+                        <ul class="user-menu dropdown-menu-right dropdown-menu dropdown-yellow dropdown-caret dropdown-close">
+                            <li>
+                                <a href="teacher.html">
+                                    <i class="ace-icon fa fa-user"></i>
+                                    个人信息
+                                </a>
+                            </li>
+
+                            <li>
+                                <a href="changePassword.html">
+                                    <i class="ace-icon fa fa-power-off"></i>
+                                    修改密码
+                                </a>
+                            </li>
+                
+                            <li class="divider"></li>
+                
+                            <li>
+                                <a id="logout">
+                                    <i class="ace-icon fa fa-power-off"></i>
+                                    退出
+                                </a>
+                            </li>
+                        </ul>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+    <div class="main-container ace-save-state" id="main-container">
+        <script type="text/javascript">
+            try{ace.settings.loadState('main-container')}catch(e){}
+        </script>
+            
+        <div id="sidebar" class="sidebar                  responsive                    ace-save-state">
+            <script type="text/javascript">
+                try{ace.settings.loadState('sidebar')}catch(e){}
+            </script>
+            
+            <ul class="nav nav-list">
+                <li class="active">
+                    <a href="teacher.html">
+                        <i class="menu-icon fa fa-tachometer"></i>
+                        <span class="menu-text"> 教师信息 </span>
+                    </a>
+                    <b class="arrow"></b>
+                </li>
+    
+                <li class="">
+                    <a href="#" class="dropdown-toggle">
+                        <i class="menu-icon fa fa-list"></i>
+                        <span class="menu-text"> 课程选择 </span>
+        
+                        <b class="arrow fa fa-angle-down"></b>
+                    </a>
+        
+                    <b class="arrow"></b>
+        
+                    <ul class="submenu">
+                        <li class="">
+                            <a href="teacherChosedCourse.html">
+                                <i class="menu-icon fa fa-caret-right"></i>
+                                学生选课表
+                            </a>
+        
+                            <b class="arrow"></b>
+                        </li>
+        
+                        <li class="">
+                            <a href="teacherCourse.html">
+                                <i class="menu-icon fa fa-caret-right"></i>
+                                开课表
+                            </a>
+        
+                            <b class="arrow"></b>
+                        </li>
+                    </ul>
+                </li>
+    
+                <li class="">
+                    <a href="grade.html">
+                        <i class="menu-icon fa fa-list-alt"></i>
+                        <span class="menu-text"> 修改成绩 </span>
+                    </a>
+        
+                    <b class="arrow"></b>
+                </li>
+            </ul>
+            <div class="sidebar-toggle sidebar-collapse" id="sidebar-collapse">
+                <i id="sidebar-toggle-icon" class="ace-icon fa fa-angle-double-left ace-save-state" data-icon1="ace-icon fa fa-angle-double-left" data-icon2="ace-icon fa fa-angle-double-right"></i>
+            </div>   
+        </div>
+        <div class="main-content">
+            <div class="main-content-inner">
+                <div class="breadcrumbs ace-save-state" id="breadcrumbs">
+                    <ul class="breadcrumb">
+                        <li>
+                            <i class="ace-icon fa fa-home home-icon"></i>
+                            <a href="#">Home</a>
+                        </li>
+    
+                        <li>
+                            <a href="#">教师信息</a>
+                        </li>
+                    </ul><!-- /.breadcrumb -->
+                </div>
+                <div class="page-content">
+                    <div class="page-header">
+                        <h1>
+                            教师信息
+                            <small>
+                                <i class="ace-icon fa fa-angle-double-right"></i>
+                                基本信息
+                            </small>
+                        </h1>
+                    </div><!-- /.page-header -->
+                    <div class="row">
+                        <div class="col-xs-12">
+                            <h3 class="header smaller lighter blue">个人资料
+                                <button class="pull-right" id="settingPic">
+                                    <i class="ace-icon fa fa-cog bigger-120"></i>
+                                </button>
+                            </h3>
+
+                            <div class="jc-demo-box" id="uploadPicture" style="display:none">
+                                <div class="page-header">
+                                    <h1>头像裁剪</h1>
+                                </div>
+                                <img src="tmp/upload/热1.jpg" alt="头像" id="target" style="width:300px;height:300px;"/>
+                                <div id="preview-pane">
+                                    <div class="preview-container" style="width:100px;height:100px;">
+                                        <img src="" alt="缩略图" class="jcrop-preview"/>
+                                    </div>
+                                    <div>
+                                        <form id="uploadCut" enctype="multipart/form-data">
+                                            <input type="file" name="upload_image" id="upload_image" accept="image/*" class="filePrew"/>
+                                            <input type="hidden" id="x" name="x"/>
+                                            <input type="hidden" name="y" id="y"/>
+                                            <input type="hidden" name="w" id="w"/>
+                                            <input type="hidden" name="h" id="h"/>
+                                        </form>
+                                    </div>
+                                
+                                    <div>
+                                        <a href="javascript:void(0);" class="btn_addPic" onclick="submit()">
+                                            <span>提交</span>
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                            <div id="baseMessage">
+								<div id="user-profile-1" class="user-profile row">
+                                    <div class="col-xs-12 col-sm-3 center">
+                                        <div>
+                                            <span class="profile-picture">
+                                                <img id="avatar" class="editable img-responsive" alt="Alex's Avatar" src="assets/images/avatars/profile-pic.jpg" />
+                                            </span>
+
+                                            <div class="space-4"></div>
+
+                                            <div class="width-80 label label-info label-xlg arrowed-in arrowed-in-right">
+                                                <div class="inline position-relative">
+                                                    <a href="#" class="user-title-label dropdown-toggle" data-toggle="dropdown">
+                                                        <i class="ace-icon fa fa-circle light-green"></i>
+                                                        &nbsp;
+                                                        <span class="white" id="studentName">Alex M. Doe</span>
+                                                    </a>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-xs-12 col-sm-9">
+                                        <div class="profile-user-info profile-user-info-striped">
+                                            <div class="profile-info-row">
+                                                <div class="profile-info-name"> Username </div>
+
+                                                <div class="profile-info-value">
+                                                    <span class="editable" id="name">alexdoe</span>
+                                                </div>
+                                            </div>
+
+                                        <div class="profile-info-row">
+                                            <div class="profile-info-name"> Location </div>
+
+                                            <div class="profile-info-value">
+                                                <i class="fa fa-map-marker light-orange bigger-110"></i>
+                                                <span class="editable" id="country">Netherlands</span>
+                                                <span class="editable" id="city">Amsterdam</span>
+                                            </div>
+                                        </div>
+
+                                        <div class="profile-info-row">
+                                            <div class="profile-info-name"> Number </div>
+
+                                            <div class="profile-info-value">
+                                                <span class="editable" id="number">0000</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
